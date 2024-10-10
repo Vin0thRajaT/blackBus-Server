@@ -238,17 +238,23 @@ export const getBusTicketDetails = async (req, res) => {
 };
 
 // Admin: Reset a bus
+
 export const resetBus = async (req, res) => {
   try {
     const { busNumber } = req.body;
     const bus = await Bus.findOne({ busNumber: busNumber });
+
     if (!bus) return res.status(404).json({ msg: "Bus not found" });
 
+    // Reset bookedSeats and availableSeats
     bus.bookedSeats = [];
     bus.availableSeats = bus.seats; // Reset available seats to total seats
     await bus.save();
 
-    res.json({ msg: "Bus reset successfully" });
+    // Remove bookings associated with this bus
+    await Booking.deleteMany({ bus: bus._id });
+
+    res.json({ msg: "Bus reset successfully and associated bookings removed" });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
