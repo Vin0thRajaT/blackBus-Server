@@ -77,6 +77,10 @@ const BusSchema = new mongoose.Schema(
           enum: ["Male", "Female", "Other"],
           required: true,
         },
+        status: {
+          type: String,
+          required: true,
+        },
       },
     ],
     fromCity: {

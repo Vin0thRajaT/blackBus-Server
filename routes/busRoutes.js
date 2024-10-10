@@ -5,13 +5,16 @@ import {
   getBuses,
   getBusDetails,
   getAvailableSeats,
-  bookSeat,
   cancelBooking,
   viewUserBookings,
   createBus,
   getBusTicketDetails,
   resetBus,
   searchBuses,
+  createCheckoutSession,
+  confirmBooking,
+  cancelTempBooking,
+  tempBookSeat,
 } from "../controllers/busController.js";
 
 const router = express.Router();
@@ -23,7 +26,9 @@ router.get("/:busId", getBusDetails);
 router.get("/:busId/available-seats", getAvailableSeats);
 
 // Authenticated user routes
-router.post("/book", auth, bookSeat);
+router.post("/temp-book", auth, tempBookSeat);
+router.post("/confirm-booking", auth, confirmBooking);
+router.post("/cancel-booking/:tempBookingId", auth, cancelTempBooking);
 router.post("/cancel", auth, cancelBooking);
 router.get("/user/bookings", auth, viewUserBookings);
 
@@ -31,5 +36,7 @@ router.get("/user/bookings", auth, viewUserBookings);
 router.post("/create", auth, adminAuth, createBus);
 router.get("/:busId/tickets", auth, adminAuth, getBusTicketDetails);
 router.post("/reset", auth, adminAuth, resetBus);
+
+router.post("/checkout-session", auth, createCheckoutSession);
 
 export default router;
