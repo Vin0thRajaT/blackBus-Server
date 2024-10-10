@@ -57,11 +57,11 @@ export const getAvailableSeats = async (req, res) => {
 };
 
 export const bookSeat = async (req, res) => {
-  const { busId, seatNumbers } = req.body; // Check if seatNumbers are passed correctly
-  console.log("Received seatNumbers:", seatNumbers); // Debugging line
+  const { busId, seatDetails } = req.body; // Expect seatDetails to include seatNumbers and passenger info
+  console.log("Received seatDetails:", seatDetails); // Debugging line
 
-  if (!seatNumbers || seatNumbers.length === 0) {
-    return res.status(400).json({ msg: "No seat numbers provided" });
+  if (!seatDetails || seatDetails.length === 0) {
+    return res.status(400).json({ msg: "No seat details provided" });
   }
 
   try {
@@ -70,9 +70,12 @@ export const bookSeat = async (req, res) => {
 
     const availableSeats = bus.availableSeats;
 
-    const unavailableSeats = seatNumbers.filter((seatNumber) =>
-      bus.bookedSeats.some((seat) => seat.seatNumber === seatNumber)
-    );
+    // Check for already booked seats
+    const unavailableSeats = seatDetails
+      .map((detail) => detail.seatNumber)
+      .filter((seatNumber) =>
+        bus.bookedSeats.some((seat) => seat.seatNumber === seatNumber)
+      );
 
     if (unavailableSeats.length > 0) {
       return res
@@ -80,21 +83,30 @@ export const bookSeat = async (req, res) => {
         .json({ msg: `Seats ${unavailableSeats.join(", ")} already booked` });
     }
 
-    if (seatNumbers.length > availableSeats) {
+    if (seatDetails.length > availableSeats) {
       return res.status(400).json({ msg: "Not enough seats available" });
     }
 
-    seatNumbers.forEach((seatNumber) => {
-      bus.bookedSeats.push({ user: req.user.id, seatNumber });
+    // Add seat bookings with passenger details
+    seatDetails.forEach((detail) => {
+      bus.bookedSeats.push({
+        user: req.user.id,
+        seatNumber: detail.seatNumber,
+        passengerName: detail.passengerName,
+        passengerAge: detail.passengerAge,
+        passengerGender: detail.passengerGender,
+      });
     });
 
-    bus.availableSeats -= seatNumbers.length;
+    // Update available seats
+    bus.availableSeats -= seatDetails.length;
     await bus.save();
 
+    // Save the booking in a separate Booking schema
     const booking = new Booking({
       user: req.user.id,
       bus: bus.id,
-      seatNumbers: seatNumbers, // Insert array of seatNumbers in a single booking
+      seatNumbers: seatDetails.map((detail) => detail.seatNumber),
     });
     console.log(booking);
     await booking.save();
@@ -205,16 +217,15 @@ export const getBusTicketDetails = async (req, res) => {
       select: "name email",
     });
 
-    console.log(bus);
-    
-
     if (!bus) return res.status(404).json({ msg: "Bus not found" });
 
-    // Map the bookedSeats to get user details and seat numbers
     const ticketDetails = bus.bookedSeats.map((booking) => ({
-      name: booking.user.name,
-      email: booking.user.email,
-      seatNumbers: booking.seatNumber,
+      userName: booking.user.name,
+      userEmail: booking.user.email,
+      seatNumber: booking.seatNumber,
+      passengerName: booking.passengerName,
+      passengerAge: booking.passengerAge,
+      passengerGender: booking.passengerGender,
     }));
 
     console.log(ticketDetails);
