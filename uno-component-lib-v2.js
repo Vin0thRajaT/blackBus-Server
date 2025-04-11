@@ -717,10 +717,9 @@ class FileUpload extends HTMLElement {
       this.files.push(file);
       this.isProcessed.push("false");
       // Added fileSizes property with name and size.
-      this.fileSizes = this.files.map((f) => ({
-        name: f.name,
-        size: f.size,
-      }));
+      this.files.forEach((file, index) => {
+        this[`file${index + 1}Size`] = file.size;
+      });
       this.updateFileList();
       this.fileNames = this.files.map((f) => f.name);
       this.crossPlatformFiles = this.files.map(
@@ -921,8 +920,19 @@ class FileUpload extends HTMLElement {
     }
     this.files = tempFile;
     this.isProcessed = tempIsProcessed;
-    // remapped fileSized after removing a file.
-    this.fileSizes = this.files.map((f) => ({ name: f.name, size: f.size }));
+
+    // Clear all old dynamic size properties
+    Object.keys(this).forEach((key) => {
+      if (key.startsWith("file") && key.endsWith("Size")) {
+        delete this[key];
+      }
+    });
+
+    // Rebuild updated size properties
+    this.files.forEach((file, index) => {
+      this[`file${index + 1}Size`] = file.size;
+    });
+
     //this.files = this.files.filter((file) => file.name !== fileName);
     this.updateFileList();
     this.fileNames = this.files.map((f) => f.name);
@@ -3052,7 +3062,9 @@ class UnoForm3 extends HTMLElement {
     const fileNames = fileElement.fileNames;
     this.fileCount = fileElement.fileCount;
     // copied fileSizes from file-upload element.
-    this.fileSizes = fileElement.fileSizes;
+    this.file1Size = fileElement.file1Size;
+    this.file2Size = fileElement.file2Size;
+    this.file3Size = fileElement.file3Size;
     this.crossPlatformFiles = [];
 
     this.value = "";
